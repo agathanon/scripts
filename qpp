@@ -1,0 +1,77 @@
+#!/usr/bin/env python3
+"""Search for packages on PyPI"""
+import argparse
+import sys
+import requests
+from bs4 import BeautifulSoup
+
+# ANSI escape sequences for colors
+CYAN = "\033[36m"
+RESET = "\033[0m"
+
+# General configuration
+TIMEOUT = 10.0
+MAX_RESULTS = 8
+
+
+def search_pypi(query):
+    """Query PyPI for packages and return a list of matches."""
+    url = "https://pypi.org/search/"
+    params = {"q": query}
+    response = requests.get(url, params=params, timeout=TIMEOUT)
+
+    if response.status_code != 200:
+        msg = f"Error: Unable to fetch data from PyPI (status code: {response.status_code})"
+        print(msg, file=sys.stderr)
+        sys.exit(1)
+
+    soup = BeautifulSoup(response.text, 'html.parser')
+    results_list = soup.find('ul', {'aria-label': 'Search results'})
+
+    if not results_list:
+        return []
+
+    results = []
+    for li in results_list.find_all('li'):
+        package_link = li.find('a', {'class': 'package-snippet'})
+        title_element = package_link.find('h3', {'class': 'package-snippet__title'})
+
+        if title_element:
+            name = title_element.find('span', {'class': 'package-snippet__name'}).text.strip()
+            version = title_element.find('span', {'class': 'package-snippet__version'}).text.strip()
+            summary = package_link.find('p', {'class': 'package-snippet__description'})
+            summary = summary.text.strip() if summary else "No summary available"
+            results.append({
+                'name': name,
+                'version': version,
+                'summary': summary
+            })
+    return results[0:MAX_RESULTS]
+
+
+def print_results(results):
+    """Pretty print results from search."""
+    if not results:
+        print("No results found.")
+        return
+
+    for result in results:
+        name = result['name']
+        version = result['version']
+        summary = result['summary']
+        print(f"{CYAN}{name} ({version}){RESET}")
+        print(f"    {summary}\n")
+
+
+def main():
+    """Main entry point."""
+    parser = argparse.ArgumentParser(description="Search for packages on PyPI.")
+    parser.add_argument("query", help="Search query for PyPI packages")
+    args = parser.parse_args()
+
+    results = search_pypi(args.query)
+    print_results(results)
+
+
+if __name__ == "__main__":
+    main()
