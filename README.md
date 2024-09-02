@@ -5,3 +5,4 @@ just a repository of scripts that probably won't be worked on regularly, lol. fi
 - certs - Grab certificates from [crt.sh](https://crt.sh)
 - cjq - Colorized `jq` output in `less`
 - qpp - Python script to query PyPI and return the top 8 hits. Requires `python3-bs4`.
+- voice_changer.sh - Helper script for running https://github.com/w-okada/voice-changer/
